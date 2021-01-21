@@ -1,55 +1,30 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using System.Threading;
-
-
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
 using System.Threading.Tasks;
 using System.IO;
 using System.Diagnostics;
+using System.Threading;
 
 namespace NotepadCompiler
 {
 
     public partial class Form1 : Form
     {
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-        public static void PressKey(Keys key, bool up)
-        {
-            const int KEYEVENTF_EXTENDEDKEY = 0x1;
-            const int KEYEVENTF_KEYUP = 0x2;
-            if (up)
-            {
-                keybd_event((byte)key, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, (UIntPtr)0);
-            }
-            else
-            {
-                keybd_event((byte)key, 0x45, KEYEVENTF_EXTENDEDKEY, (UIntPtr)0);
-            }
-        }
-
-        void TestProc()
-        {
-            //PressKey(Keys.ControlKey, false);
-            PressKey(Keys.P, false);
-            PressKey(Keys.P, true);
-            //PressKey(Keys.ControlKey, true);
-        }
-        // Simulate a key press event
-
 
         public Form1()
         {
             InitializeComponent();
         }
+
+        private string batCompile = "set PATH=C:\\MinGW\\bin;%PATH% & del \"C:\\NPC\\NPC_compiled.exe\" >nul 2>&1 & gcc C:\\NPC\\NPC_source.c -o \"C:\\NPC\\NPC_compiled.exe\">C:\\NPC\\NPC_compile_output 2>&1";
+        private string vbsCompile = "Set oShell = CreateObject(\"Wscript.Shell\") : Dim strArgs: strArgs = \"cmd /c C:\\NPC\\NPC_compile.bat\" : oShell.Run strArgs, 0, false";
+        
+        private string batExecute = "start \"\" \"cmd /c C:\\NPC\\NPC_compiled.exe>C:\\NPC\\NPC_execute_output\"";
+        private string vbsExecute = "Set oShell = CreateObject(\"Wscript.Shell\") : Dim strArgs: strArgs = \"cmd /c C:\\NPC\\NPC_execute.bat\" : oShell.Run strArgs, 0, false";
+
+        private int closeReqTimes = 0;
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -59,8 +34,75 @@ namespace NotepadCompiler
                 MessageBox.Show("Please create C:\\NPC\\ folder to continue.");
                 Close();
             }
-            HotKeyManager.RegisterHotKey(Keys.K, KeyModifiers.Alt);
-            HotKeyManager.HotKeyPressed += (s, ea) => {
+
+            if (!Directory.Exists("C:\\MinGW\\bin"))
+            {
+                MessageBox.Show("Please install MinGW compiler on C:\\MinGW\\ directory!");
+                Close();
+            }
+
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.bat", batCompile);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.vbs", vbsCompile);
+
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.bat", batExecute);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.vbs", vbsExecute);
+
+            int id1 = HotKeyManager.RegisterHotKey(Keys.C, KeyModifiers.Alt);
+            int id2 = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
+            int id3 = HotKeyManager.RegisterHotKey(Keys.X, KeyModifiers.Alt);
+
+            HotKeyManager.HotKeyPressed += async (s, ea) => {
+                string input = "";
+
+
+                if (ea.Key == Keys.X)
+                {
+                    //close request
+                    closeReqTimes++;
+                    if (closeReqTimes == 5)
+                    {
+                        notifyIcon.Visible = false;
+
+                        HotKeyManager.UnregisterHotKey(id1);
+                        HotKeyManager.UnregisterHotKey(id2);
+                        HotKeyManager.UnregisterHotKey(id3);
+                        Close();
+                        return;
+                    }
+                    return;
+                }
+                closeReqTimes = 0;
+
+                if (ea.Key == Keys.C)
+                {
+                    //source from clipboards
+                    input = getClipboard();
+                }
+
+                if (ea.Key == Keys.S)
+                {
+                    // source from text-file
+                    if(!File.Exists("C:\\NPC\\Senza nome"))
+                    {
+                        //show error
+                        setIcon(Properties.Resources.compileerror);
+                        await Task.Delay(150);
+                        setIcon(Properties.Resources.normal);
+                        await Task.Delay(150);
+                        setIcon(Properties.Resources.compileerror);
+                        await Task.Delay(150);
+                        setIcon(Properties.Resources.normal);
+                        await Task.Delay(150);
+                        setIcon(Properties.Resources.compileerror);
+                        await Task.Delay(150);
+                        setIcon(Properties.Resources.normal);
+                        await Task.Delay(150);
+                        return;
+                    }
+                    input = System.IO.File.ReadAllText("C:\\NPC\\Senza nome");
+                }
+
+                runCompilerProcess(input);
             };
             Hide();
             Visible = false;
@@ -68,32 +110,22 @@ namespace NotepadCompiler
         }
 
 
-        private async void runCompilerProcess()
+        private async void runCompilerProcess(string source)
         {
             setIcon(Properties.Resources.compiling);
             await Task.Delay(1000);
 
-            if (System.IO.File.Exists("C:\\NPC\\NPC_status"))
-            {
-                System.IO.File.Delete("C:\\NPC\\NPC_status");
-            }
-            if (!System.IO.File.Exists("C:\\NPC\\NPC_compile_output"))
-            {
-                System.IO.File.Create("C:\\NPC\\NPC_compile_output");
-            }
-            if (!System.IO.File.Exists("C:\\NPC\\NPC_exec_output"))
-            {
-                System.IO.File.Create("C:\\NPC\\NPC_exec_output");
-            }
-
-            string input = getClipboard();
             string compileOut = "";
             string execOutput = "";
 
-            //System.IO.File.WriteAllText("C:\\NPC\\NPC_source.c", input);
-            Process.Start("C:\\NPC\\NPC_process.bat");
-            //bool fileExists = false;
-            while (!System.IO.File.Exists("C:\\NPC\\NPC_status"))
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_source.c", source);
+
+            if (File.Exists("C:\\NPC\\NPC_compile_output"))
+            {
+                File.Delete("C:\\NPC\\NPC_compile_output");
+            }
+            Process.Start("C:\\NPC\\NPC_compile.vbs");
+            while (!System.IO.File.Exists("C:\\NPC\\NPC_compile_output"))
             {
                 setIcon(Properties.Resources.normal);
                 await Task.Delay(250);
@@ -101,35 +133,103 @@ namespace NotepadCompiler
                 await Task.Delay(250);
             }
 
-            compileOut = System.IO.File.ReadAllText("C:\\NPC\\NPC_compile_output");
-            execOutput = System.IO.File.ReadAllText("C:\\NPC\\NPC_exec_output");
-
-            if (compileOut.Trim().Length == 0)
+            await Task.Delay(500);
+            compileOut = readFile("C:\\NPC\\NPC_compile_output", true)[0];
+            Console.WriteLine("COMPILE OUT: " + compileOut);
+            if (compileOut.Trim().Length != 0)
             {
-                setClipboard(execOutput);
-                setIcon(Properties.Resources.compileok);
-            }
-            else
-            {
+                //compilation failure
                 setIcon(Properties.Resources.compileerror);
-                setClipboard(compileOut);
+
+                //find output with error
+                bool errorFound = false;
+                foreach(string line in readFile("C:\\NPC\\NPC_compile_output", false))
+                {
+                    if (line.Contains("error:"))
+                    {
+                        errorFound = true;
+                        string nl = line.Substring(line.IndexOf("error:") + 6);
+                        setClipboard(nl);
+                        break;
+                    }
+                }
+                if (!errorFound)
+                {
+                    setClipboard(compileOut);
+                }
+
+                await Task.Delay(2500);
+                setIcon(Properties.Resources.normal);
+                return;
             }
+
+
+            if (File.Exists("C:\\NPC\\NPC_execute_output"))
+            {
+                File.Delete("C:\\NPC\\NPC_execute_output");
+            }
+            Process.Start("C:\\NPC\\NPC_execute.vbs");
+            while (!System.IO.File.Exists("C:\\NPC\\NPC_execute_output"))
+            {
+                setIcon(Properties.Resources.normal);
+                await Task.Delay(250);
+                setIcon(Properties.Resources.compiling);
+                await Task.Delay(250);
+            }
+
+            await Task.Delay(500);
+            execOutput = readFile("C:\\NPC\\NPC_execute_output", true)[0];
+
+            setClipboard(execOutput);
+            setIcon(Properties.Resources.compileok);
 
             await Task.Delay(2500);
             setIcon(Properties.Resources.normal);
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private string[] readFile(string filename, bool inline)
         {
-            runCompilerProcess();
+            string[] content = { };
+            bool success = false;
+            while (!success)
+            {
+                try
+                {
+                    content = System.IO.File.ReadAllLines(filename);
+                    success = true;
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine("read file error: " + ex.Message);
+                    success = false;
+                }
+            }
+            if (inline)
+            {
+                string inlineS = "";
+                foreach(string s in content)
+                {
+                    inlineS += s + Environment.NewLine;
+                }
+                string[] inlineSS = { inlineS };
+                return inlineSS;
+            }
+            return content;
         }
+
         private void setIcon(Icon icon)
         {
             this.Invoke(new Action(() => { notifyIcon.Icon = icon; }));
         }
         private void setClipboard(string text)
         {
-            this.Invoke(new Action(() => { Clipboard.SetText(text); }));
+            string cb = text;
+            if (string.IsNullOrEmpty(cb))
+            {
+                cb = "--";
+            }
+            Console.WriteLine("setting" + text + " --> " + cb);
+            this.Invoke(new Action(() => { Clipboard.SetText(cb); }));
         }
         private string getClipboard()
         {
