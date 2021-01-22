@@ -41,12 +41,6 @@ namespace NotepadCompiler
                 Close();
             }
 
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.bat", batCompile);
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.vbs", vbsCompile);
-
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.bat", batExecute);
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.vbs", vbsExecute);
-
             int id1 = HotKeyManager.RegisterHotKey(Keys.C, KeyModifiers.Alt);
             int id2 = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
             int id3 = HotKeyManager.RegisterHotKey(Keys.X, KeyModifiers.Alt);
@@ -117,6 +111,12 @@ namespace NotepadCompiler
 
             string compileOut = "";
             string execOutput = "";
+
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.bat", batCompile);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.vbs", vbsCompile);
+
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.bat", batExecute);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.vbs", vbsExecute);
 
             System.IO.File.WriteAllText("C:\\NPC\\NPC_source.c", source);
 
