@@ -13,6 +13,16 @@ namespace NotepadCompiler
     public partial class Form1 : Form
     {
 
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd,
+            int hWndInsertAfter, int x, int y, int cx, int cy, int uFlags);
+
+        private const int HWND_TOPMOST = -1;
+        private const int HWND_NOTOPMOST = -2;
+        private const int SWP_NOMOVE = 0x0002;
+        private const int SWP_NOSIZE = 0x0001;
+
         public Form1()
         {
             InitializeComponent();
@@ -26,6 +36,7 @@ namespace NotepadCompiler
 
         private int closeReqTimes = 0;
 
+        private Process notepadProcess = null;
         private void Form1_Load(object sender, EventArgs e)
         {
             notifyIcon.Icon = Properties.Resources.normal;
@@ -44,10 +55,25 @@ namespace NotepadCompiler
             int id1 = HotKeyManager.RegisterHotKey(Keys.C, KeyModifiers.Alt);
             int id2 = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
             int id3 = HotKeyManager.RegisterHotKey(Keys.X, KeyModifiers.Alt);
+            int id4 = HotKeyManager.RegisterHotKey(Keys.N, KeyModifiers.Alt);
 
             HotKeyManager.HotKeyPressed += async (s, ea) => {
-                string input = "";
+                if (notepadProcess != null && notepadProcess.HasExited)
+                {
+                    notepadProcess = null;
+                }
+                closeReqTimes = 0;
 
+                if(ea.Key == Keys.N)
+                {
+                    System.IO.File.AppendAllText("C:\\NPC\\Senza nome", "");
+                    //start notepad on topmost, opening 'Senza titolo' file
+                    notepadProcess = Process.Start("notepad.exe", "C:\\NPC\\Senza nome");
+                    while (notepadProcess.MainWindowHandle.ToInt32() == 0)
+                    {
+                        await Task.Delay(100);
+                    }
+                }
 
                 if (ea.Key == Keys.X)
                 {
@@ -60,23 +86,23 @@ namespace NotepadCompiler
                         HotKeyManager.UnregisterHotKey(id1);
                         HotKeyManager.UnregisterHotKey(id2);
                         HotKeyManager.UnregisterHotKey(id3);
+                        HotKeyManager.UnregisterHotKey(id4);
                         Close();
                         return;
                     }
                     return;
                 }
-                closeReqTimes = 0;
 
                 if (ea.Key == Keys.C)
                 {
                     //source from clipboards
-                    input = getClipboard();
+                    runCompilerProcess(getClipboard());
                 }
 
                 if (ea.Key == Keys.S)
                 {
                     // source from text-file
-                    if(!File.Exists("C:\\NPC\\Senza nome"))
+                    if (!File.Exists("C:\\NPC\\Senza nome"))
                     {
                         //show error
                         setIcon(Properties.Resources.compileerror);
@@ -93,10 +119,9 @@ namespace NotepadCompiler
                         await Task.Delay(150);
                         return;
                     }
-                    input = System.IO.File.ReadAllText("C:\\NPC\\Senza nome");
+                    runCompilerProcess(System.IO.File.ReadAllText("C:\\NPC\\Senza nome"));
                 }
 
-                runCompilerProcess(input);
             };
             Hide();
             Visible = false;
@@ -107,6 +132,12 @@ namespace NotepadCompiler
         private async void runCompilerProcess(string source)
         {
             setIcon(Properties.Resources.compiling);
+
+            if (notepadProcess != null)
+            {
+                SetWindowPos(notepadProcess.MainWindowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            }
+
             await Task.Delay(1000);
 
             string compileOut = "";
@@ -160,6 +191,7 @@ namespace NotepadCompiler
 
                 await Task.Delay(2500);
                 setIcon(Properties.Resources.normal);
+
                 return;
             }
 
@@ -179,6 +211,11 @@ namespace NotepadCompiler
 
             await Task.Delay(500);
             execOutput = readFile("C:\\NPC\\NPC_execute_output", true)[0];
+
+            if (notepadProcess != null)
+            {
+                SetWindowPos(notepadProcess.MainWindowHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            }
 
             setClipboard(execOutput);
             setIcon(Properties.Resources.compileok);
@@ -249,6 +286,15 @@ namespace NotepadCompiler
             Show();
             Visible = true;
             WindowState = FormWindowState.Normal;
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Hide();
+            Visible = false;
+            WindowState = FormWindowState.Minimized;
+            e.Cancel = true;
+            notifyIcon.ShowBalloonTip(5, "Already running!", "To leave, right Click on this icon --> Esci", ToolTipIcon.Info);
         }
     }
 
