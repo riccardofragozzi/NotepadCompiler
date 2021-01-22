@@ -192,6 +192,10 @@ namespace NotepadCompiler
                 await Task.Delay(2500);
                 setIcon(Properties.Resources.normal);
 
+                if (notepadProcess != null)
+                {
+                    SetWindowPos(notepadProcess.MainWindowHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+                }
                 return;
             }
 
@@ -265,7 +269,6 @@ namespace NotepadCompiler
             {
                 cb = "--";
             }
-            Console.WriteLine("setting" + text + " --> " + cb);
             this.Invoke(new Action(() => { Clipboard.SetText(cb); }));
         }
         private string getClipboard()

@@ -9,3 +9,4 @@ C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Debug\NotepadCo
 C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Debug\NotepadCompiler.csproj.CopyComplete
 C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Debug\NotepadCompiler.exe
 C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Debug\NotepadCompiler.pdb
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\bin\Debug\NotepadCompiler.pdb
