@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Diagnostics;
 using System.Threading;
+using NotepadCompiler.Properties;
 
 namespace NotepadCompiler
 {
@@ -26,31 +27,61 @@ namespace NotepadCompiler
         public Form1()
         {
             InitializeComponent();
+            if (Process.GetProcessesByName("NotepadCompiler").Length > 1)
+            {
+                MessageBox.Show("Another instance of NPC is already running");
+                Application.Exit();
+            }
         }
 
         private string batCompile = "set PATH=C:\\MinGW\\bin;%PATH% & del \"C:\\NPC\\NPC_compiled.exe\" >nul 2>&1 & gcc C:\\NPC\\NPC_source.c -o \"C:\\NPC\\NPC_compiled.exe\">C:\\NPC\\NPC_compile_output 2>&1";
         private string vbsCompile = "Set oShell = CreateObject(\"Wscript.Shell\") : Dim strArgs: strArgs = \"cmd /c C:\\NPC\\NPC_compile.bat\" : oShell.Run strArgs, 0, false";
-        
+
         private string batExecute = "start \"\" \"cmd /c C:\\NPC\\NPC_compiled.exe>C:\\NPC\\NPC_execute_output\"";
         private string vbsExecute = "Set oShell = CreateObject(\"Wscript.Shell\") : Dim strArgs: strArgs = \"cmd /c C:\\NPC\\NPC_execute.bat\" : oShell.Run strArgs, 0, false";
+
+        private string batNetwork = "ipconfig > C:\\NPC\\NPC_network";
+        private string vbsNetwork = "Set oShell = CreateObject(\"Wscript.Shell\") : Dim strArgs: strArgs = \"cmd /c C:\\NPC\\NPC_network.bat\" : oShell.Run strArgs, 0, false";
 
         private int closeReqTimes = 0;
 
         private Process notepadProcess = null;
+        private string network_output_dir = "";
         private void Form1_Load(object sender, EventArgs e)
         {
             notifyIcon.Icon = Properties.Resources.normal;
             if (!Directory.Exists("C:\\NPC"))
             {
                 MessageBox.Show("Please create C:\\NPC\\ folder to continue.");
-                Close();
+                Application.Exit();
+                return;
             }
 
             if (!Directory.Exists("C:\\MinGW\\bin"))
             {
                 MessageBox.Show("Please install MinGW compiler on C:\\MinGW\\ directory!");
-                Close();
+                Application.Exit();
+                return;
             }
+
+            if(File.Exists("C:\\NPC\\NPC_configuration.txt"))
+            {
+                foreach (string conf in System.IO.File.ReadAllLines("C:\\NPC\\NPC_configuration.txt"))
+                {
+                    if (conf.StartsWith("network_output_dir:"))
+                    {
+                        network_output_dir = conf.Replace("network_output_dir:", "").Trim().TrimEnd('\\').TrimEnd('/') + "\\";
+                        if (!Directory.Exists(network_output_dir))
+                        {
+                            MessageBox.Show("network_output_dir specified on C:\\NPC\\NPC_configuration.txt is not existing! Please create it before to run Notepad Compiler.");
+                            Application.Exit();
+                            return;
+                        }
+                    }
+                }
+            }
+
+            writeScripts();
 
             int id1 = HotKeyManager.RegisterHotKey(Keys.C, KeyModifiers.Alt);
             int id2 = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
@@ -61,18 +92,6 @@ namespace NotepadCompiler
                 if (notepadProcess != null && notepadProcess.HasExited)
                 {
                     notepadProcess = null;
-                }
-                closeReqTimes = 0;
-
-                if(ea.Key == Keys.N)
-                {
-                    System.IO.File.AppendAllText("C:\\NPC\\Senza nome", "");
-                    //start notepad on topmost, opening 'Senza titolo' file
-                    notepadProcess = Process.Start("notepad.exe", "C:\\NPC\\Senza nome");
-                    while (notepadProcess.MainWindowHandle.ToInt32() == 0)
-                    {
-                        await Task.Delay(100);
-                    }
                 }
 
                 if (ea.Key == Keys.X)
@@ -87,10 +106,22 @@ namespace NotepadCompiler
                         HotKeyManager.UnregisterHotKey(id2);
                         HotKeyManager.UnregisterHotKey(id3);
                         HotKeyManager.UnregisterHotKey(id4);
-                        Close();
+                        Application.Exit();
                         return;
                     }
                     return;
+                }
+                closeReqTimes = 0;
+
+                if (ea.Key == Keys.N)
+                {
+                    System.IO.File.AppendAllText("C:\\NPC\\Senza nome", "");
+                    //start notepad on topmost, opening 'Senza nome' file
+                    notepadProcess = Process.Start("notepad.exe", "C:\\NPC\\Senza nome");
+                    while (notepadProcess.MainWindowHandle.ToInt32() == 0)
+                    {
+                        await Task.Delay(100);
+                    }
                 }
 
                 if (ea.Key == Keys.C)
@@ -128,10 +159,66 @@ namespace NotepadCompiler
             WindowState = FormWindowState.Minimized;
         }
 
+        private void writeScripts()
+        {
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.bat", batCompile);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.vbs", vbsCompile);
 
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.bat", batExecute);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.vbs", vbsExecute);
+
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_network.bat", batNetwork);
+            System.IO.File.WriteAllText("C:\\NPC\\NPC_network.vbs", vbsNetwork);
+
+            System.IO.File.AppendAllText("C:\\NPC\\NPC_configuration.txt", "");
+
+            System.IO.File.AppendAllText("C:\\NPC\\Senza nome", "");
+
+        }
+
+        enum compileStatus
+        {
+            processing, success, fail
+        }
+        private void printToNetwork(compileStatus status, string content)
+        {
+            try
+            {
+                string titleS = "";
+                string titleColor = "";
+                if (status == compileStatus.fail)
+                {
+                    titleS = "COMPILATION FAIL";
+                    titleColor = "#ff6363";
+                }
+                if (status == compileStatus.processing)
+                {
+                    titleS = "COMPILING...";
+                    titleColor = "#ffa500";
+                }
+                if (status == compileStatus.success)
+                {
+                    titleS = "COMPILATION OK";
+                    titleColor = "#00ff00";
+                }
+                string style = "<style>*{font-family:'Roboto';font-family:'-apple-system','HelveticaNeue'; font-size:17;} </style>";
+                string title = "<h2 style=\"color:" + titleColor + "\">" + titleS + "</h2>";
+                string bcontent = "<p style=\"color:white\">" + content.Replace(Environment.NewLine, "<br>") + "</p>";
+
+                if (Directory.Exists(network_output_dir))
+                {
+                    System.IO.File.WriteAllBytes(network_output_dir + "index.php", Resources.index);
+                    System.IO.File.WriteAllText(network_output_dir + "NPC_content.html", style + title + bcontent);
+                }
+            } catch (Exception ex)
+            {
+
+            }
+        }
         private async void runCompilerProcess(string source)
         {
             setIcon(Properties.Resources.compiling);
+            printToNetwork(compileStatus.processing, "");
 
             if (notepadProcess != null)
             {
@@ -143,11 +230,7 @@ namespace NotepadCompiler
             string compileOut = "";
             string execOutput = "";
 
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.bat", batCompile);
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_compile.vbs", vbsCompile);
-
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.bat", batExecute);
-            System.IO.File.WriteAllText("C:\\NPC\\NPC_execute.vbs", vbsExecute);
+            writeScripts();
 
             System.IO.File.WriteAllText("C:\\NPC\\NPC_source.c", source);
 
@@ -174,7 +257,7 @@ namespace NotepadCompiler
 
                 //find output with error
                 bool errorFound = false;
-                foreach(string line in readFile("C:\\NPC\\NPC_compile_output", false))
+                foreach (string line in readFile("C:\\NPC\\NPC_compile_output", false))
                 {
                     if (line.Contains("error:"))
                     {
@@ -188,6 +271,7 @@ namespace NotepadCompiler
                 {
                     setClipboard(compileOut);
                 }
+                printToNetwork(compileStatus.fail, compileOut);
 
                 await Task.Delay(2500);
                 setIcon(Properties.Resources.normal);
@@ -214,7 +298,18 @@ namespace NotepadCompiler
             }
 
             await Task.Delay(500);
-            execOutput = readFile("C:\\NPC\\NPC_execute_output", true)[0];
+            execOutput = readFile("C:\\NPC\\NPC_execute_output", true, 3000, () => {
+                foreach (Process p in Process.GetProcessesByName("NPC_compiled"))
+                {
+                    try
+                    {
+                        p.Kill();
+                    } catch (Exception ex)
+                    {
+                        Console.WriteLine("Cannot kill NPC_compiled.exe");
+                    }
+                }
+            })[0];
 
             if (notepadProcess != null)
             {
@@ -222,21 +317,40 @@ namespace NotepadCompiler
             }
 
             setClipboard(execOutput);
+            printToNetwork(compileStatus.success, execOutput);
             setIcon(Properties.Resources.compileok);
 
             await Task.Delay(2500);
             setIcon(Properties.Resources.normal);
         }
 
-        private string[] readFile(string filename, bool inline)
+        private long startTime = 0;
+        private string[] readFile(string filename, bool inline, int timeout = int.MaxValue, Action onTimeout = null)
         {
+            startTime = DateTime.Now.Ticks;
             string[] content = { };
             bool success = false;
             while (!success)
             {
                 try
                 {
-                    content = System.IO.File.ReadAllLines(filename);
+                    bool isTimeout = new TimeSpan(DateTime.Now.Ticks - startTime).TotalMilliseconds > timeout;
+                    Console.WriteLine("Runnig for " + new TimeSpan(DateTime.Now.Ticks - startTime).TotalMilliseconds + "ms...");
+                    if (isTimeout && onTimeout != null)
+                    {
+                        Task.Run(onTimeout);
+                    }
+                    string[] lines = System.IO.File.ReadAllLines(filename);
+                    content = lines;
+                    if (isTimeout)
+                    {
+                        string[] warning = { "WARNING: non-exit status. Probable loop or input wait." };
+                        string[] result = new string[lines.Length + 1];
+                        warning.CopyTo(result, 0);
+                        lines.CopyTo(result, 1);
+                        content = result;
+                    }
+
                     success = true;
                 }
                 catch(Exception ex)
@@ -248,9 +362,15 @@ namespace NotepadCompiler
             if (inline)
             {
                 string inlineS = "";
+                int count = 0;
                 foreach(string s in content)
                 {
+                    if (count > 100)
+                    {
+                        break;
+                    }
                     inlineS += s + Environment.NewLine;
+                    count++;
                 }
                 string[] inlineSS = { inlineS };
                 return inlineSS;
@@ -281,7 +401,7 @@ namespace NotepadCompiler
         private void esciToolStripMenuItem_Click(object sender, EventArgs e)
         {
             notifyIcon.Visible = false;
-            Close();
+            Application.Exit();
         }
 
         private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
@@ -297,7 +417,32 @@ namespace NotepadCompiler
             Visible = false;
             WindowState = FormWindowState.Minimized;
             e.Cancel = true;
-            notifyIcon.ShowBalloonTip(5, "Already running!", "To leave, right Click on this icon --> Esci", ToolTipIcon.Info);
+            notifyIcon.ShowBalloonTip(5, "Running!", "To leave, right Click on this icon --> Esci", ToolTipIcon.Info);
+        }
+
+        private async void iPAddressToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (File.Exists("C:\\NPC\\NPC_network"))
+            {
+                File.Delete("C:\\NPC\\NPC_network");
+            }
+            Process.Start("C:\\NPC\\NPC_network.vbs");
+            while (!System.IO.File.Exists("C:\\NPC\\NPC_network"))
+            {
+                setIcon(Properties.Resources.normal);
+                await Task.Delay(250);
+                setIcon(Properties.Resources.compiling);
+                await Task.Delay(250);
+            }
+            string outs= "";
+            foreach(string f in System.IO.File.ReadAllLines("C:\\NPC\\NPC_network"))
+            {
+                if (f.ToLower().Contains("ipv4"))
+                {
+                    outs += Environment.NewLine + f;
+                }
+            }
+            MessageBox.Show("Showing ip addresses:" + outs);
         }
     }
 

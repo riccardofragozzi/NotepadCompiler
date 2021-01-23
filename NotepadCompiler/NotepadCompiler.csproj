@@ -100,6 +100,7 @@
     <None Include="Resources\compiling.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\index.php" />
     <None Include="Resources\normal.ico" />
   </ItemGroup>
   <ItemGroup>
