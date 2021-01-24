@@ -107,6 +107,7 @@ namespace NotepadCompiler
                         HotKeyManager.UnregisterHotKey(id3);
                         HotKeyManager.UnregisterHotKey(id4);
                         HotKeyManager.UnregisterHotKey(id5);
+                        HotKeyManager.UnregisterHotKey(id6);
                         Application.Exit();
                         return;
                     }
