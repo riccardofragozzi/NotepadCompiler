@@ -9,7 +9,7 @@ body{
 <script type="text/javascript">
 window.onload = function() {
     var frameRefreshInterval = setInterval(function() {
-        document.getElementById("myframe").src = document.getElementById("myframe").src
+        document.getElementById("myframe").src = "NPC_content.html?token=" + Math.floor(Math.random() * 999999)
     }, 500);
 }
 </script>

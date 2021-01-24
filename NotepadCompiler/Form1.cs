@@ -45,8 +45,10 @@ namespace NotepadCompiler
 
         private int closeReqTimes = 0;
 
-        private Process notepadProcess = null;
         private string network_output_dir = "";
+
+
+        private bool topmostEnabled = true;
         private void Form1_Load(object sender, EventArgs e)
         {
             notifyIcon.Icon = Properties.Resources.normal;
@@ -84,15 +86,13 @@ namespace NotepadCompiler
             writeScripts();
 
             int id1 = HotKeyManager.RegisterHotKey(Keys.C, KeyModifiers.Alt);
-            int id2 = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
-            int id3 = HotKeyManager.RegisterHotKey(Keys.X, KeyModifiers.Alt);
-            int id4 = HotKeyManager.RegisterHotKey(Keys.N, KeyModifiers.Alt);
+            int id2 = HotKeyManager.RegisterHotKey(Keys.V, KeyModifiers.Alt);
+            int id3 = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
+            int id4 = HotKeyManager.RegisterHotKey(Keys.X, KeyModifiers.Alt);
+            int id5 = HotKeyManager.RegisterHotKey(Keys.N, KeyModifiers.Alt);
+            int id6 = HotKeyManager.RegisterHotKey(Keys.T, KeyModifiers.Alt);
 
             HotKeyManager.HotKeyPressed += async (s, ea) => {
-                if (notepadProcess != null && notepadProcess.HasExited)
-                {
-                    notepadProcess = null;
-                }
 
                 if (ea.Key == Keys.X)
                 {
@@ -106,6 +106,7 @@ namespace NotepadCompiler
                         HotKeyManager.UnregisterHotKey(id2);
                         HotKeyManager.UnregisterHotKey(id3);
                         HotKeyManager.UnregisterHotKey(id4);
+                        HotKeyManager.UnregisterHotKey(id5);
                         Application.Exit();
                         return;
                     }
@@ -113,15 +114,70 @@ namespace NotepadCompiler
                 }
                 closeReqTimes = 0;
 
+                if (ea.Key == Keys.T)
+                {
+                    topmostEnabled = !topmostEnabled;
+                    setIcon(topmostEnabled ? Properties.Resources.compileok : Properties.Resources.compileerror);
+                    await Task.Delay(1000);
+                    setIcon(Properties.Resources.normal);
+                }
+
                 if (ea.Key == Keys.N)
                 {
                     System.IO.File.AppendAllText("C:\\NPC\\Senza nome", "");
                     //start notepad on topmost, opening 'Senza nome' file
-                    notepadProcess = Process.Start("notepad.exe", "C:\\NPC\\Senza nome");
-                    while (notepadProcess.MainWindowHandle.ToInt32() == 0)
+                    Process.Start("notepad.exe", "C:\\NPC\\Senza nome");
+                }
+                if (ea.Key == Keys.V)
+                {
+                    //paste
+                    string[] source = getClipboard().Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                    string replaced = "";
+                    foreach (string sSource in source)
                     {
-                        await Task.Delay(100);
+                        string rSource = sSource;
+                        rSource = rSource.Replace("in t", "int");
+                        rSource = rSource.Replace("#inc lude", "#include");
+                        rSource = rSource.Replace("< stdio .h >", "<stdio.h>");
+                        rSource = rSource.Replace("< stdlib .h >", "<stdlib.h>");
+                        rSource = rSource.Replace("< string .h >", "<string.h>");
+                        rSource = rSource.Replace("s i z e o f ", "sizeof");
+                        rSource = rSource.Replace("d e f in e", "define");
+                        rSource = rSource.Replace("e l s e", "else");
+                        rSource = rSource.Replace("f o r", "for");
+                        rSource = rSource.Replace("i f (", "if(");
+                        rSource = rSource.Replace("d e f au l t", "default");
+                        rSource = rSource.Replace("sw itch", "switch");
+                        rSource = rSource.Replace("wh i le", "while");
+                        rSource = rSource.Replace("s tru c t", "struct");
+                        rSource = rSource.Replace('’', '\'');
+                        rSource = rSource.Replace(" \"", "\"");
+                        rSource = rSource.Replace("\" ", "\"");
+                        rSource = rSource.Replace("- >", "->");
+                        rSource = rSource.Replace("& &", "&&");
+                        rSource = rSource.Replace("| |", "||");
+                        rSource = rSource.Replace(" [", "[");
+                        rSource = rSource.Replace(" ]", "]");
+                        rSource = rSource.Replace(" (", "(");
+                        rSource = rSource.Replace(" )", ")");
+                        rSource = rSource.Replace(" {", "{");
+                        rSource = rSource.Replace(" }", "}");
+                        rSource = rSource.Replace("[ ", "[");
+                        rSource = rSource.Replace("] ", "]");
+                        rSource = rSource.Replace("( ", "(");
+                        rSource = rSource.Replace(") ", ")");
+                        rSource = rSource.Replace("{ ", "{");
+                        rSource = rSource.Replace("} ", "}");
+
+                        while (rSource.Length > 0 && char.IsDigit(rSource[0]))
+                        {
+                            rSource = rSource.Remove(0, 1);
+                        }
+                        replaced += rSource + Environment.NewLine;
                     }
+
+
+                    setClipboard(replaced);
                 }
 
                 if (ea.Key == Keys.C)
@@ -219,16 +275,20 @@ namespace NotepadCompiler
         {
             setIcon(Properties.Resources.compiling);
             printToNetwork(compileStatus.processing, "");
-
-            if (notepadProcess != null)
-            {
-                SetWindowPos(notepadProcess.MainWindowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-            }
+            
+            setProcessesTopmost(new string[] { "notepad", "chrome" }, true);
 
             await Task.Delay(1000);
 
             string compileOut = "";
+            string warning = "";
             string execOutput = "";
+
+            if (!source.Contains("main"))
+            {
+                source += Environment.NewLine + "int main(){}";
+                warning += "<a style=\"color:yellow\">NPC WARNING: added main()</a>" + Environment.NewLine;
+            }
 
             writeScripts();
 
@@ -269,17 +329,15 @@ namespace NotepadCompiler
                 }
                 if (!errorFound)
                 {
-                    setClipboard(compileOut);
+                    setClipboard(warning + compileOut);
                 }
-                printToNetwork(compileStatus.fail, compileOut);
+                printToNetwork(compileStatus.fail, warning + compileOut);
 
                 await Task.Delay(2500);
                 setIcon(Properties.Resources.normal);
 
-                if (notepadProcess != null)
-                {
-                    SetWindowPos(notepadProcess.MainWindowHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-                }
+                setProcessesTopmost(new string[] { "notepad", "chrome" }, false);
+
                 return;
             }
 
@@ -311,17 +369,29 @@ namespace NotepadCompiler
                 }
             })[0];
 
-            if (notepadProcess != null)
-            {
-                SetWindowPos(notepadProcess.MainWindowHandle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-            }
+            setProcessesTopmost(new string[] { "notepad", "chrome" }, false);
 
-            setClipboard(execOutput);
-            printToNetwork(compileStatus.success, execOutput);
+            setClipboard(warning + execOutput);
+            printToNetwork(compileStatus.success, warning + execOutput);
             setIcon(Properties.Resources.compileok);
 
             await Task.Delay(2500);
             setIcon(Properties.Resources.normal);
+        }
+
+        private void setProcessesTopmost(string[] processes, bool topMost)
+        {
+            if (!topmostEnabled)
+            {
+                return;
+            }
+            foreach(string proc in processes)
+            {
+                foreach (Process p in Process.GetProcessesByName(proc))
+                {
+                    SetWindowPos(p.MainWindowHandle, (topMost ? HWND_TOPMOST : HWND_NOTOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+                }
+            }
         }
 
         private long startTime = 0;

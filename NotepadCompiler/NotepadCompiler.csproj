@@ -91,6 +91,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\index.php" />
+    <None Include="Resources\normal.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\bkg.png" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="Resources\compileerror.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -98,13 +105,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\compiling.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\index.php" />
-    <None Include="Resources\normal.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\bkg.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -10,7 +10,6 @@ Use this tool for university exams. How to use:
 	- Notepad will open a new file stored on "C:\NPC\Senza titolo", to simulate a not saved file on notepad title.
 	- Type code on notepad editor, then save it (CTRL+S)
 	- Press ALT+S to compile source code. Watch fake mouse icon in windows notify area: Yellow=compiling, Red=compile error, Green=compile ok.
-	- During the compilation process notepad will become topmost. This is to hide some compiler command prompts appearing on top of screen. Make sure notepad is maximized.
 	- Press CTRL+V to paste your source code output(or compile errors), or show it on your phone(read XAMPP integration)
 	
 	--CLIPBOARDS
@@ -20,9 +19,14 @@ Use this tool for university exams. How to use:
 	- Press ALT+C to compile source code. Watch fake mouse icon in windows notify area: Yellow=compiling, Red=compile error, Green=compile ok.
 	- Press CTRL+V to paste your source code output(or compile errors), or show it on your phone(read XAMPP integration)
 
+Note:
+	- During the compilation process, if enabled(by default is enabled, you can disable by pressing ALT+T), notepad.exe and Chrome.exe will become topmost.
+	  This is to hide some compiler command prompts appearing on top of screen. Make sure notepad anche chrome are maximized.
 
 Other commands:
 	- ALT+X --> Leave program. You must press ALT+X 5 times consecutively.
+	- ALT+V --> Before to press CTRL+V, ALT+V applies some replacements on clipboards, ex. "in t" --> "int", "#inc lude" --> "#inc lude", ecc...
+	- ALT+T --> Enable/Disable compilation topmost for chrome and notepad. If enabled, when press ALT+T NPC icon becomes green for 1 second, else, NPC icon is red for 1 second.
 
 
 Install instructions:
