@@ -1,0 +1,12 @@
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\bin\Release\NotepadCompiler.exe.config
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\bin\Release\NotepadCompiler.exe
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\bin\Release\NotepadCompiler.pdb
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\bin\Release\WindowsInput.dll
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\bin\Release\WindowsInput.xml
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.csprojAssemblyReference.cache
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.Form1.resources
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.Properties.Resources.resources
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.csproj.GenerateResource.cache
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.csproj.CopyComplete
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.exe
+C:\Users\Utente\source\repos\NotepadCompiler\NotepadCompiler\obj\Release\NotepadCompiler.pdb

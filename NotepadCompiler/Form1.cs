@@ -169,6 +169,10 @@ namespace NotepadCompiler
                         rSource = rSource.Replace(") ", ")");
                         rSource = rSource.Replace("{ ", "{");
                         rSource = rSource.Replace("} ", "}");
+                        rSource = rSource.Replace(" - - ", "--");
+                        rSource = rSource.Replace(" + + ", "++");
+                        rSource = rSource.Replace("- - ", "--");
+                        rSource = rSource.Replace("+ + ", "++");
 
                         while (rSource.Length > 0 && char.IsDigit(rSource[0]))
                         {
