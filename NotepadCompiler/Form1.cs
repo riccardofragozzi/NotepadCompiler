@@ -211,7 +211,9 @@ namespace NotepadCompiler
                         await Task.Delay(150);
                         return;
                     }
-                    runCompilerProcess(System.IO.File.ReadAllText("C:\\NPC\\Senza nome"));
+                    string content = System.IO.File.ReadAllText("C:\\NPC\\Senza nome");
+                    content = content.Replace("----------", "int main(){");
+                    runCompilerProcess(content);
                 }
 
             };
