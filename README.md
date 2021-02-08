@@ -23,7 +23,7 @@ Note:
 	- During the compilation process, if enabled(by default is enabled, you can disable by pressing ALT+T), notepad.exe and Chrome.exe will become topmost.
 	  This is to hide some compiler command prompts appearing on top of screen. Make sure notepad anche chrome are maximized.
 	- On notepad, the char sequence "----------" will be replaced with "int main(){"
-	
+	- On notepad, all libs will automatically added(stdio, stdlib, stddef, string)
 Other commands:
 	- ALT+X --> Leave program. You must press ALT+X 5 times consecutively.
 	- ALT+V --> Before to press CTRL+V, ALT+V applies some replacements on clipboards, ex. "in t" --> "int", "#inc lude" --> "#inc lude", ecc...

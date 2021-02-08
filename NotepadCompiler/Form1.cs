@@ -211,7 +211,12 @@ namespace NotepadCompiler
                         await Task.Delay(150);
                         return;
                     }
-                    string content = System.IO.File.ReadAllText("C:\\NPC\\Senza nome");
+                    string content = "";
+                    content += "#include <stdio.h>" + Environment.NewLine;
+                    content += "#include <stdlib.h>" + Environment.NewLine;
+                    content += "#include <stddef.h>" + Environment.NewLine;
+                    content += "#include <string.h>" + Environment.NewLine;
+                    content += System.IO.File.ReadAllText("C:\\NPC\\Senza nome");
                     content = content.Replace("----------", "int main(){");
                     runCompilerProcess(content);
                 }
